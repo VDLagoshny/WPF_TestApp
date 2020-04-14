@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace WPF_TestApp
 {
@@ -32,19 +33,19 @@ namespace WPF_TestApp
 		private MediaState _mediaState = MediaState.Stoped;
 		internal MediaState MediaState
 		{
+			get { return _mediaState; }
 			set
 			{
 				_mediaState = value;
 				FirePropertyChanged("PlayButtonName");
 			}
-			get { return _mediaState; }
 		}
 
 		public string PlayButtonName
 		{
 			get
 			{
-				return (MediaState == MediaState.Playing) ? "Pause": "Play";
+				return (MediaState == MediaState.Playing) ? "Pause" : "Play";
 			}
 		}
 
@@ -55,6 +56,7 @@ namespace WPF_TestApp
 			if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name));
 		}
 
+		#region Обработчик событий кнопок
 		private void btnOpen_Click(object sender, RoutedEventArgs e)
 		{
 			var _dlg = new OpenFileDialog()
@@ -79,19 +81,8 @@ namespace WPF_TestApp
 
 			if (MediaState == MediaState.Playing && media.CanPause)
 				Pause();
-			if (MediaState == MediaState.Paused || MediaState == MediaState.Stoped)
+			else if (MediaState == MediaState.Paused || MediaState == MediaState.Stoped)
 				Play();
-
-			
-			switch (PlayButtonName)
-			{
-				case "Pause":
-					Pause();
-					break;
-				case "Play":
-					Play();
-					break;
-			}
 		}
 
 		private void btnStop_Click(object sender, RoutedEventArgs e)
@@ -99,15 +90,52 @@ namespace WPF_TestApp
 			if (MediaState == MediaState.Playing && media.CanPause)
 				Stop();
 		}
+		#endregion Обработчик событий кнопок
 
 		private void slVideo_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
-
+			//Pause();
+			media.Pause();
+			media.Position = TimeSpan.FromSeconds(slVideo.Value);
+			//Play();
+			media.Play();
 		}
 
+		#region Методы работы с потоком видео
 		private void Media_Loaded(object sender, RoutedEventArgs e)
 		{
+			media.MediaOpened += new RoutedEventHandler(media_MediaOpened);
+			media.MediaFailed += new EventHandler<ExceptionRoutedEventArgs>(media_MediaFailed);
+			media.MediaEnded += new RoutedEventHandler(media_MediaEnded);
 
+			DispatcherTimer _timer = new DispatcherTimer();
+			_timer.Interval = new TimeSpan(0, 0, 1);
+			_timer.Tick += new EventHandler(timer_Tick);
+			_timer.Start();
+		}
+
+		void timer_Tick(object sender, EventArgs e)
+		{
+			if (MediaState == MediaState.Playing)
+			{
+				slVideo.Value = media.Position.TotalSeconds; // Исправить на корректное формат времени: часы-минуты-секунды
+			}
+		}
+
+		void media_MediaOpened(object sender, RoutedEventArgs e)
+		{
+			slVideo.Maximum = media.NaturalDuration.TimeSpan.TotalSeconds;
+			Play();
+		}
+
+		void media_MediaFailed(object sender, ExceptionRoutedEventArgs e)
+		{
+			MessageBox.Show("Loading video error", "Error", MessageBoxButton.OK);
+		}
+
+		void media_MediaEnded(object sender, RoutedEventArgs e)
+		{
+			Stop();
 		}
 
 		void Stop()
@@ -127,5 +155,6 @@ namespace WPF_TestApp
 			media.Pause();
 			MediaState = MediaState.Paused;
 		}
+		#endregion Методы работы с потоком видео
 	}
 }
