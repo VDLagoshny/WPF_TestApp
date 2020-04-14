@@ -11,7 +11,7 @@
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <MediaElement x:Name="media" Margin="5" UnloadedBehavior="Manual" Loaded="Media_Loaded"/>
+        <MediaElement Name="media" Margin="5" UnloadedBehavior="Manual" Loaded="Media_Loaded" LoadedBehavior="Manual"/>
         <StackPanel x:Name="stackPanel" Margin="0" Grid.Row="1">
             <Grid x:Name="grid" Margin="5,5,5,0">
                 <StackPanel Margin="0" Orientation="Horizontal" HorizontalAlignment="Center">
